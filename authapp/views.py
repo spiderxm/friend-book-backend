@@ -2,10 +2,9 @@ import datetime
 
 from django.urls import reverse
 from rest_framework.generics import GenericAPIView
-from .serializers import RegisterSerializer, EmailVerificationSerializer
+from .serializers import RegisterSerializer, EmailVerificationSerializer, LoginSerializerClass
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from django.contrib.sites.shortcuts import get_current_site
 from .utils import Helper
@@ -34,9 +33,9 @@ class RegisterView(GenericAPIView):
             serializer.save()
             user_data = serializer.data
             user = User.objects.get(email=user_data['email'])
-            token = jwt.encode({"user_id": user.id, "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=86400)},
-                               settings.SECRET_KEY, algorithm="HS256")
-            print(token)
+            token = jwt.encode(
+                {"user_id": user.id, "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=86400)},
+                settings.SECRET_KEY, algorithm="HS256")
             current_site = get_current_site(request).domain
             relative_link = reverse("email-verification")
             abs_url = 'http://' + current_site + relative_link + "?token=" + str(token)
@@ -55,7 +54,7 @@ class RegisterView(GenericAPIView):
 
 class VerifyEmailView(APIView):
     """
-    Verify User Email
+    Verify User Account
     """
 
     serializer_class = EmailVerificationSerializer
@@ -65,8 +64,10 @@ class VerifyEmailView(APIView):
         token_param_config
     ])
     def get(self, request):
+        """
+        Receive a token from user and verify it.
+        """
         token = request.GET.get('token', None)
-        print(token)
         try:
             data = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
             user = User.objects.get(id=data['user_id'], )
@@ -80,3 +81,19 @@ class VerifyEmailView(APIView):
             return Response({"message": "Token has expired. "}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.DecodeError:
             return Response({"message": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LoginAPIView(GenericAPIView):
+    serializer_class = LoginSerializerClass
+
+    def post(self, request):
+        """
+        Login a user via token
+        :return: user data with tokens if valid credentials
+        """
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            data = serializer.data
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY)

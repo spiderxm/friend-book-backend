@@ -1,5 +1,7 @@
-from rest_framework.serializers import ModelSerializer, CharField, EmailField, ValidationError
+from rest_framework.serializers import ModelSerializer, CharField, EmailField, ValidationError, JSONField
 from .models import User
+from django.contrib import auth
+from rest_framework.exceptions import AuthenticationFailed
 
 
 class RegisterSerializer(ModelSerializer):
@@ -25,6 +27,9 @@ class RegisterSerializer(ModelSerializer):
 
 
 class EmailVerificationSerializer(ModelSerializer):
+    """
+    Email Verification Serializer
+    """
     token = CharField(max_length=1024)
 
     class Meta:
@@ -32,3 +37,31 @@ class EmailVerificationSerializer(ModelSerializer):
         fields = ['token']
 
 
+class LoginSerializerClass(ModelSerializer):
+    """
+    Login Serializer
+    """
+    email = EmailField(max_length=100, min_length=3)
+    password = CharField(min_length=7, max_length=68, write_only=True)
+    username = CharField(max_length=255, read_only=True)
+    tokens = JSONField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ['email', 'password', 'username', 'tokens']
+
+    def validate(self, attrs):
+        email = attrs.get('email', '')
+        password = attrs.get('password', '')
+        user = auth.authenticate(email=email, password=password)
+        if not user:
+            raise AuthenticationFailed('Invalid credentials. Please try again')
+        if not user.is_active:
+            raise AuthenticationFailed('Account disabled')
+        if not user.is_verified:
+            raise AuthenticationFailed('Account not verified')
+        return {
+            'email': user.email,
+            'username': user.username,
+            'tokens': user.tokens()
+        }
