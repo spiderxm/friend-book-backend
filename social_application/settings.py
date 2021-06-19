@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'authapp',
     'rest_framework',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -137,8 +138,10 @@ AUTH_USER_MODEL = 'authapp.USER'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = env('EMAIL_ID')
-EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
+# EMAIL_HOST_USER = env('EMAIL_ID')
+# EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
+EMAIL_HOST_USER = 'sports.registraion@gmail.com'
+EMAIL_HOST_PASSWORD = '4eBkh,qSB[bAX8gy'
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

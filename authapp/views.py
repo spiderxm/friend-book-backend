@@ -1,12 +1,19 @@
+import datetime
+
 from django.urls import reverse
 from rest_framework.generics import GenericAPIView
-from .serializers import RegisterSerializer
+from .serializers import RegisterSerializer, EmailVerificationSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from django.contrib.sites.shortcuts import get_current_site
 from .utils import Helper
+import jwt
+from django.conf import settings
+from rest_framework.views import APIView
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
 class RegisterView(GenericAPIView):
@@ -27,7 +34,9 @@ class RegisterView(GenericAPIView):
             serializer.save()
             user_data = serializer.data
             user = User.objects.get(email=user_data['email'])
-            token = RefreshToken.for_user(user).access_token
+            token = jwt.encode({"user_id": user.id, "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=86400)},
+                               settings.SECRET_KEY, algorithm="HS256")
+            print(token)
             current_site = get_current_site(request).domain
             relative_link = reverse("email-verification")
             abs_url = 'http://' + current_site + relative_link + "?token=" + str(token)
@@ -44,10 +53,30 @@ class RegisterView(GenericAPIView):
             return Response(errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
-class VerifyEmail(GenericAPIView):
+class VerifyEmailView(APIView):
     """
     Verify User Email
     """
 
-    def post(self, request):
-        pass
+    serializer_class = EmailVerificationSerializer
+    token_param_config = openapi.Parameter('token', in_=openapi.IN_QUERY, type=openapi.TYPE_STRING)
+
+    @swagger_auto_schema(manual_parameters=[
+        token_param_config
+    ])
+    def get(self, request):
+        token = request.GET.get('token', None)
+        print(token)
+        try:
+            data = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            user = User.objects.get(id=data['user_id'], )
+            if not user.is_verified:
+                user.is_verified = True
+                user.save()
+                return Response({"message": "Account verified successfully"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "Already activated"})
+        except jwt.ExpiredSignatureError:
+            return Response({"message": "Token has expired. "}, status=status.HTTP_400_BAD_REQUEST)
+        except jwt.DecodeError:
+            return Response({"message": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
