@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
+import datetime
 from pathlib import Path
 import environ
 
@@ -42,6 +43,8 @@ INSTALLED_APPS = [
     'authapp',
     'rest_framework',
     'drf_yasg',
+    'posts',
+    'rest_framework_simplejwt'
 ]
 
 MIDDLEWARE = [
@@ -145,3 +148,18 @@ EMAIL_HOST_PASSWORD = '4eBkh,qSB[bAX8gy'
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    }
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=15),
+    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=15),
+}
