@@ -2,9 +2,9 @@ import datetime
 
 from django.urls import reverse
 from rest_framework.generics import GenericAPIView
-from .serializers import RegisterSerializer, EmailVerificationSerializer, LoginSerializerClass
+from .serializers import RegisterSerializer, EmailVerificationSerializer, LoginSerializerClass, LogoutSerializer
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
 from .models import User
 from django.contrib.sites.shortcuts import get_current_site
 from .utils import Helper
@@ -100,3 +100,15 @@ class LoginAPIView(GenericAPIView):
         else:
             return Response(serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
+
+class LogoutApiView(GenericAPIView):
+    serializer_class = LogoutSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
