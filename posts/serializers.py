@@ -21,7 +21,7 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['caption', 'imageUrl', 'created_at', 'id']
+        fields = ['caption', 'imageUrl', 'created_at', 'id', 'latitude', 'longitude']
 
 
 class AllPostSerializer(serializers.ModelSerializer):
@@ -32,7 +32,7 @@ class AllPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['user', 'caption', 'imageUrl', 'created_at']
+        fields = ['user', 'caption', 'imageUrl', 'created_at', 'latitude', 'longitude']
 
 
 class CommentSerializer(serializers.ModelSerializer):

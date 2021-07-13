@@ -13,6 +13,7 @@ from django.conf import settings
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from .renderers import UserRenderer
 
 
 class RegisterView(GenericAPIView):
@@ -20,6 +21,7 @@ class RegisterView(GenericAPIView):
     Users creation View
     """
     serializer_class = RegisterSerializer
+    renderer_classes = (UserRenderer,)
 
     def post(self, request):
         """
@@ -36,7 +38,6 @@ class RegisterView(GenericAPIView):
             token = jwt.encode(
                 {"user_id": user.id, "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=86400)},
                 settings.SECRET_KEY, algorithm="HS256")
-            print(token)
             current_site = get_current_site(request).domain
             relative_link = reverse("email-verification")
             abs_url = 'http://' + current_site + relative_link + "?token=" + str(token)
@@ -46,7 +47,7 @@ class RegisterView(GenericAPIView):
                 'email_body': email_body,
                 'email': user.email
             }
-            # Helper.send_account_verification_email(data)
+            Helper.send_account_verification_email(data)
             return Response(user_data, status=status.HTTP_201_CREATED)
         else:
             errors = serializer.errors
