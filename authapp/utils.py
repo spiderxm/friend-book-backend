@@ -1,6 +1,7 @@
 from django.core.mail import send_mail
 from django.conf import settings
 
+
 class Helper:
     @staticmethod
     def send_account_verification_email(data):
@@ -13,4 +14,4 @@ class Helper:
                 fail_silently=False,
             )
         except Exception as e:
-            print(e)
+            raise Exception(e)

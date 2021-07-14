@@ -21,7 +21,7 @@ class RegisterSerializer(ModelSerializer):
         email = attrs.get('email', '')
         username = attrs.get('username', '')
         if not username.isalnum():
-            raise ValidationError("The username should only contain alpha numeric characters")
+            raise ValidationError({"username": ("The username should only contain alpha numeric characters",)})
 
         return attrs
 

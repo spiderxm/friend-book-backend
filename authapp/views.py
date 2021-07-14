@@ -7,7 +7,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import User
 from django.contrib.sites.shortcuts import get_current_site
-from .utils import Helper
+
+from .tasks import send_email_task
 import jwt
 from django.conf import settings
 from rest_framework.views import APIView
@@ -41,13 +42,13 @@ class RegisterView(GenericAPIView):
             current_site = get_current_site(request).domain
             relative_link = reverse("email-verification")
             abs_url = 'http://' + current_site + relative_link + "?token=" + str(token)
-            email_body = 'Hi ' + user.username + ' User link below to verify your email \n' + abs_url
+            email_body = 'Hi ' + user.username + ' Use link below to verify your email \n' + abs_url
             data = {
                 'email_subject': 'Verify your email',
                 'email_body': email_body,
                 'email': user.email
             }
-            Helper.send_account_verification_email(data)
+            send_email_task.delay(data)
             return Response(user_data, status=status.HTTP_201_CREATED)
         else:
             errors = serializer.errors
