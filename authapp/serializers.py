@@ -85,3 +85,23 @@ class LogoutSerializer(Serializer):
             RefreshToken(self.token).blacklist()
         except TokenError:
             raise ValidationError(self.default_error_messages)
+
+
+class ResendEmailSerializer(Serializer):
+    email = EmailField(max_length=256)
+    user_not_present_error = {
+        "email": ("User with this email id is not present",)
+    }
+    user_already_verified = {
+        "email": ("User already verified",)
+    }
+
+    def validate(self, attrs):
+        email = attrs.get('email', '')
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise ValidationError(self.user_not_present_error)
+        if user.is_verified:
+            raise ValidationError(self.user_already_verified)
+        return super().validate(attrs)

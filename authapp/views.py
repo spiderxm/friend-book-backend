@@ -2,7 +2,8 @@ import datetime
 
 from django.urls import reverse
 from rest_framework.generics import GenericAPIView
-from .serializers import RegisterSerializer, EmailVerificationSerializer, LoginSerializerClass, LogoutSerializer
+from .serializers import RegisterSerializer, ResendEmailSerializer, EmailVerificationSerializer, LoginSerializerClass, \
+    LogoutSerializer
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import User
@@ -15,6 +16,36 @@ from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .renderers import UserRenderer
+
+
+class ResendVerificationEmailView(GenericAPIView):
+    serializer_class = ResendEmailSerializer
+    renderer_classes = (UserRenderer,)
+
+    def post(self, request):
+        """
+        Resend Verification email
+        """
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            user_data = serializer.data
+            user = User.objects.get(email=user_data['email'])
+            token = jwt.encode(
+                {"user_id": user.id, "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=86400)},
+                settings.SECRET_KEY, algorithm="HS256")
+            current_site = get_current_site(request).domain
+            relative_link = reverse("email-verification")
+            abs_url = 'http://' + current_site + relative_link + "?token=" + str(token)
+            email_body = 'Hi ' + user.username + ' Use link below to verify your email \n' + abs_url
+            data = {
+                'email_subject': 'Verify your email',
+                'email_body': email_body,
+                'email': user.email
+            }
+            send_email_task.delay(data)
+            return Response({"message": "You will receive verification email"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RegisterView(GenericAPIView):
