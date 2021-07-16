@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'posts',
     'corsheaders',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist'
+    'rest_framework_simplejwt.token_blacklist',
+    'utility'
 ]
 
 MIDDLEWARE = [
@@ -173,3 +174,7 @@ CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_TASK_TRACK_STARTED = True
+
+MEDIA_URL = '/media/'
+print(os.path.join(BASE_DIR, "media"))
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")

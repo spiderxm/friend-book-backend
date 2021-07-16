@@ -1,3 +1,4 @@
+from django.core.validators import MinLengthValidator
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -30,8 +31,10 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(max_length=20, unique=True, db_index=True)
+    username = models.CharField(max_length=20, unique=True, db_index=True,
+                                validators=[MinLengthValidator(5, "Username Length should be 5 characters")])
     email = models.EmailField(max_length=100, unique=True)
+    image = models.FileField(blank=False, null=False, default="default.jpg")
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

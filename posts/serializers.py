@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email']
+        fields = ['email', 'image', 'username']
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -32,7 +32,7 @@ class AllPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['user', 'caption', 'imageUrl', 'created_at', 'latitude', 'longitude']
+        fields = ['user', 'caption', 'imageUrl', 'created_at', 'user']
 
 
 class CommentSerializer(serializers.ModelSerializer):

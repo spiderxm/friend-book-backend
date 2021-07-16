@@ -3,7 +3,7 @@ import datetime
 from django.urls import reverse
 from rest_framework.generics import GenericAPIView
 from .serializers import RegisterSerializer, ResendEmailSerializer, EmailVerificationSerializer, LoginSerializerClass, \
-    LogoutSerializer
+    LogoutSerializer, UserImageSerializer, ResetPasswordSerializer
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import User
@@ -19,6 +19,9 @@ from .renderers import UserRenderer
 
 
 class ResendVerificationEmailView(GenericAPIView):
+    """
+        View to Resend Verification email
+    """
     serializer_class = ResendEmailSerializer
     renderer_classes = (UserRenderer,)
 
@@ -118,6 +121,7 @@ class VerifyEmailView(APIView):
 
 
 class LoginAPIView(GenericAPIView):
+    renderer_classes = (UserRenderer,)
     serializer_class = LoginSerializerClass
 
     def post(self, request):
@@ -142,5 +146,44 @@ class LogoutApiView(GenericAPIView):
         if serializer.is_valid():
             serializer.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+class UserImageView(GenericAPIView):
+    """
+    Retrieve and update user image
+    """
+    serializer_class = UserImageSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = None
+
+    def get(self, request):
+        return Response({"image": User.objects.get(email=request.user.email).image.url}, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            user = request.user
+            image = data['image']
+            user.image = image
+            user.save()
+            return Response({"image": user.image.url}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+class ResetPasswordView(GenericAPIView):
+    serializer_class = ResetPasswordSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    renderer_classes = (UserRenderer,)
+
+    def put(self, request):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            user = request.user
+            serializer.save()
+            return Response({"message": "Password Updated Successfully"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY)

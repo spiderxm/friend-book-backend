@@ -1,6 +1,8 @@
-from rest_framework.serializers import ModelSerializer, CharField, EmailField, ValidationError, JSONField, Serializer
+from rest_framework.relations import PrimaryKeyRelatedField
+from rest_framework.serializers import DateTimeField, ModelSerializer, CharField, EmailField, FileField, \
+    ValidationError, JSONField, \
+    Serializer, CurrentUserDefault
 from rest_framework_simplejwt.exceptions import TokenError
-
 from .models import User
 from django.contrib import auth
 from rest_framework.exceptions import AuthenticationFailed
@@ -47,11 +49,13 @@ class LoginSerializerClass(ModelSerializer):
     email = EmailField(max_length=100, min_length=3)
     password = CharField(min_length=7, max_length=68, write_only=True)
     username = CharField(max_length=255, read_only=True)
+    image = FileField(read_only=True)
     tokens = JSONField(read_only=True)
+    created_at = DateTimeField(read_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'username', 'tokens']
+        fields = ['email', 'password', 'username', 'tokens', 'image', 'created_at']
 
     def validate(self, attrs):
         email = attrs.get('email', '')
@@ -66,7 +70,9 @@ class LoginSerializerClass(ModelSerializer):
         return {
             'email': user.email,
             'username': user.username,
-            'tokens': user.tokens()
+            'tokens': user.tokens(),
+            'image': user.image,
+            'created_at': user.created_at
         }
 
 
@@ -105,3 +111,33 @@ class ResendEmailSerializer(Serializer):
         if user.is_verified:
             raise ValidationError(self.user_already_verified)
         return super().validate(attrs)
+
+
+class UserImageSerializer(Serializer):
+    image = FileField(allow_empty_file=False, allow_null=False)
+
+
+class ResetPasswordSerializer(Serializer):
+    oldPassword = CharField(min_length=7)
+    newPassword = CharField(min_length=7)
+
+    samePasswordError = {"New Password": ("New Password can't be same as old password",)}
+
+    def validate(self, attrs):
+        newPassword = attrs.get('newPassword', '')
+        oldPassword = attrs.get('oldPassword', '')
+        user = self.context.get("request").user
+        if newPassword == oldPassword:
+            raise ValidationError(self.samePasswordError)
+        if user.check_password(oldPassword) is False:
+            raise ValidationError({"Old Pasword": ("Invalid Password. Please try again with correct password",)})
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.context.get("request").user
+        oldPassword = self.validated_data['oldPassword']
+        newPassword = self.validated_data['oldPassword']
+        if user.check_password(oldPassword):
+            user.set_password(newPassword)
+            user.save()
+
