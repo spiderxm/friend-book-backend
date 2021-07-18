@@ -1,8 +1,10 @@
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import DateTimeField, ModelSerializer, CharField, EmailField, FileField, \
     ValidationError, JSONField, \
-    Serializer, CurrentUserDefault
+    Serializer, ReadOnlyField
 from rest_framework_simplejwt.exceptions import TokenError
+
+from posts.models import Post
 from .models import User
 from django.contrib import auth
 from rest_framework.exceptions import AuthenticationFailed
@@ -96,10 +98,10 @@ class LogoutSerializer(Serializer):
 class ResendEmailSerializer(Serializer):
     email = EmailField(max_length=256)
     user_not_present_error = {
-        "email": ("User with this email id is not present",)
+        "Email": ("User with this email id is not present",)
     }
     user_already_verified = {
-        "email": ("User already verified",)
+        "Email": ("User already verified",)
     }
 
     def validate(self, attrs):
@@ -127,17 +129,30 @@ class ResetPasswordSerializer(Serializer):
         newPassword = attrs.get('newPassword', '')
         oldPassword = attrs.get('oldPassword', '')
         user = self.context.get("request").user
-        if newPassword == oldPassword:
-            raise ValidationError(self.samePasswordError)
         if user.check_password(oldPassword) is False:
             raise ValidationError({"Old Pasword": ("Invalid Password. Please try again with correct password",)})
+        if newPassword == oldPassword:
+            raise ValidationError(self.samePasswordError)
         return attrs
 
     def save(self, **kwargs):
         user = self.context.get("request").user
         oldPassword = self.validated_data['oldPassword']
-        newPassword = self.validated_data['oldPassword']
+        newPassword = self.validated_data['newPassword']
         if user.check_password(oldPassword):
             user.set_password(newPassword)
             user.save()
 
+
+class UserProfileSerializer(ModelSerializer):
+    posts = ReadOnlyField()
+
+    class Meta:
+        model = User
+        fields = ['created_at', 'id', 'username', 'image', 'posts']
+
+
+class PostSerializer(ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ['caption', 'image', 'created_at', 'user', 'likes', 'id']

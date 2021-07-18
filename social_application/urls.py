@@ -45,4 +45,5 @@ urlpatterns = [
                   path('auth/', include('authapp.urls')),
                   path('posts/', include('posts.urls')),
                   path('info/', include('utility.urls')),
+                  path('users/', include('friends.urls')),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

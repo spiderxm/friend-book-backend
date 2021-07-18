@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'authapp',
     'rest_framework',
     'drf_yasg',
+    'friends',
     'posts',
     'corsheaders',
     'rest_framework_simplejwt',

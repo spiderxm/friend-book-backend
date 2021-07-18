@@ -1,9 +1,12 @@
 import datetime
-
+from rest_framework.generics import RetrieveAPIView
 from django.urls import reverse
 from rest_framework.generics import GenericAPIView
+
+from friends.models import Friends
+from posts.models import Post
 from .serializers import RegisterSerializer, ResendEmailSerializer, EmailVerificationSerializer, LoginSerializerClass, \
-    LogoutSerializer, UserImageSerializer, ResetPasswordSerializer
+    LogoutSerializer, UserImageSerializer, ResetPasswordSerializer, UserProfileSerializer, PostSerializer
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import User
@@ -182,8 +185,22 @@ class ResetPasswordView(GenericAPIView):
     def put(self, request):
         serializer = self.serializer_class(data=request.data, context={'request': request})
         if serializer.is_valid():
-            user = request.user
             serializer.save()
             return Response({"message": "Password Updated Successfully"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+class UserProfileView(RetrieveAPIView):
+    renderer_classes = (UserRenderer,)
+    serializer_class = UserProfileSerializer
+    queryset = User.objects.all()
+    lookup_field = "username"
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        if response.data['id'] is not None:
+            response.data['followers_count'] = len(Friends.objects.all().filter(follows__id=response.data['id']))
+            response.data['follows_count'] = len(Friends.objects.all().filter(follower__id=response.data['id']))
+            response.data['posts'] = PostSerializer(Post.objects.all().filter(user_id=response.data['id']).order_by('-created_at'), many=True).data
+        return response

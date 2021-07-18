@@ -9,7 +9,8 @@ class Post(models.Model):
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     caption = models.CharField(max_length=255)
-    imageUrl = models.URLField(max_length=1024)
+    image = models.FileField()
+    likes = models.JSONField(default=[])
     created_at = models.DateTimeField(auto_now_add=True)
     latitude = models.DecimalField(decimal_places=10, null=True, blank=True, max_digits=15,
                                    validators=[
