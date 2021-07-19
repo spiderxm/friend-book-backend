@@ -166,8 +166,8 @@ SWAGGER_SETTINGS = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(hours=24),
-    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(hours=48),
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=24),
+    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=24),
 }
 
 CELERY_BROKER_URL = "redis://localhost:6379"
